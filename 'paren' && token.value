@@ -1,0 +1,11 @@
+'(') {
+      consume(); // consume '('
+      const result = parseExpression();
+      const closeParen = consume();
+      if (!closeParen || closeParen.type !== 'paren' || closeParen.value !== ')') {
+        throw new Error('Expected closing parenthesis');
+      }
+      return result;
+    }
+
+    if (token.type
