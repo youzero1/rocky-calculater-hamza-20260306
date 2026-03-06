@@ -1,0 +1,42 @@
+')') {
+      tokens.push({ type: 'paren', value: ch });
+      i++;
+      continue;
+    }
+
+    if (ch === '%') {
+      // Percentage: convert last number
+      tokens.push({ type: 'operator', value: '%' });
+      i++;
+      continue;
+    }
+
+    throw new Error(`Unexpected character: ${ch}`);
+  }
+
+  return tokens;
+}
+
+/**
+ * Simple recursive descent parser for arithmetic expressions.
+ * Grammar:
+ *   expr     -> term (('+' | '-') term)*
+ *   term     -> factor (('*' | '/') factor)*
+ *   factor   -> NUMBER | '(' expr ')' | '-' factor
+ */
+export function evaluate(expression: string): number {
+  const tokens = tokenize(expression);
+  let pos = 0;
+
+  function peek(): Token | undefined {
+    return tokens[pos];
+  }
+
+  function consume(): Token {
+    return tokens[pos++];
+  }
+
+  function parseExpression(): number {
+    let result = parseTerm();
+
+    while (peek() && peek()!.type
