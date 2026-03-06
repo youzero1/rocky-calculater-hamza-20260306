@@ -1,0 +1,14 @@
+'+' || peek()!.value === '-')) {
+      const op = consume().value;
+      const right = parseTerm();
+      if (op === '+') result += right;
+      else result -= right;
+    }
+
+    return result;
+  }
+
+  function parseTerm(): number {
+    let result = parseFactor();
+
+    while (peek() && peek()!.type
