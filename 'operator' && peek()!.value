@@ -1,0 +1,8 @@
+'%') {
+        consume();
+        return token.value / 100;
+      }
+      return token.value;
+    }
+
+    if (token.type
