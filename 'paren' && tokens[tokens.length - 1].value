@@ -1,0 +1,32 @@
+'('))
+    ) {
+      let num = '-';
+      i++;
+      while (i < expr.length && (/[0-9]/.test(expr[i]) || expr[i] === '.')) {
+        num += expr[i];
+        i++;
+      }
+      if (num === '-') {
+        throw new Error('Invalid expression');
+      }
+      tokens.push({ type: 'number', value: parseFloat(num) });
+      continue;
+    }
+
+    if (/[0-9]/.test(ch) || ch === '.') {
+      let num = '';
+      while (i < expr.length && (/[0-9]/.test(expr[i]) || expr[i] === '.')) {
+        num += expr[i];
+        i++;
+      }
+      tokens.push({ type: 'number', value: parseFloat(num) });
+      continue;
+    }
+
+    if ('+-*/'.includes(ch)) {
+      tokens.push({ type: 'operator', value: ch });
+      i++;
+      continue;
+    }
+
+    if (ch
