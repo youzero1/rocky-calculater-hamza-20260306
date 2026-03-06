@@ -1,0 +1,199 @@
+'-') {
+      consume();
+      return -parseFactor();
+    }
+
+    throw new Error(`Unexpected token: ${JSON.stringify(token)}`);
+  }
+
+  const result = parseExpression();
+
+  if (pos < tokens.length) {
+    throw new Error('Unexpected tokens at end of expression');
+  }
+
+  return result;
+}
+
+export function formatResult(value: number): string {
+  if (!isFinite(value)) {
+    return 'Error';
+  }
+  // Round to avoid floating point issues
+  const rounded = Math.round(value * 1e12) / 1e12;
+  const str = rounded.toString();
+  // Limit display length
+  if (str.length > 15) {
+    return value.toExponential(8);
+  }
+  return str;
+}
+</file>
+
+<file path="rocky-calculator/src/components/Display.tsx">
+'use client';
+
+import React from 'react';
+
+interface DisplayProps {
+  expression: string;
+  value: string;
+}
+
+export default function Display({ expression, value }: DisplayProps) {
+  const getSizeClass = () => {
+    if (value.length > 12) return 'xsmall';
+    if (value.length > 8) return 'small';
+    return '';
+  };
+
+  return (
+    <div className="display-container">
+      <div className="display-expression">{expression || '\u00A0'}</div>
+      <div className={`display-value ${getSizeClass()}`}>{value || '0'}</div>
+    </div>
+  );
+}
+</file>
+
+<file path="rocky-calculator/src/components/CalculatorButton.tsx">
+'use client';
+
+import React from 'react';
+
+interface CalculatorButtonProps {
+  label: string;
+  onClick: () => void;
+  className?: string;
+  ariaLabel?: string;
+}
+
+export default function CalculatorButton({
+  label,
+  onClick,
+  className = 'btn-number',
+  ariaLabel,
+}: CalculatorButtonProps) {
+  return (
+    <button
+      className={`calc-btn ${className}`}
+      onClick={onClick}
+      aria-label={ariaLabel || label}
+      type="button"
+    >
+      {label}
+    </button>
+  );
+}
+</file>
+
+<file path="rocky-calculator/src/components/Calculator.tsx">
+'use client';
+
+import React, { useState, useCallback, useEffect } from 'react';
+import Display from './Display';
+import CalculatorButton from './CalculatorButton';
+import { evaluate, formatResult } from '@/lib/calculatorEngine';
+
+interface CalculatorProps {
+  onCalculate: (expression: string, result: string) => void;
+  onToast: (message: string) => void;
+}
+
+export default function Calculator({ onCalculate, onToast }: CalculatorProps) {
+  const [display, setDisplay] = useState('0');
+  const [expression, setExpression] = useState('');
+  const [shouldResetDisplay, setShouldResetDisplay] = useState(false);
+  const [lastResult, setLastResult] = useState<string | null>(null);
+
+  const inputDigit = useCallback((digit: string) => {
+    if (shouldResetDisplay) {
+      setDisplay(digit);
+      setShouldResetDisplay(false);
+    } else {
+      setDisplay((prev) => (prev === '0' ? digit : prev + digit));
+    }
+    setLastResult(null);
+  }, [shouldResetDisplay]);
+
+  const inputDecimal = useCallback(() => {
+    if (shouldResetDisplay) {
+      setDisplay('0.');
+      setShouldResetDisplay(false);
+      return;
+    }
+    if (!display.includes('.')) {
+      setDisplay((prev) => prev + '.');
+    }
+  }, [shouldResetDisplay, display]);
+
+  const inputOperator = useCallback((operator: string) => {
+    const displayMap: Record<string, string> = {
+      '+': ' + ',
+      '-': ' − ',
+      '*': ' × ',
+      '/': ' ÷ ',
+    };
+
+    if (lastResult !== null) {
+      setExpression(lastResult + displayMap[operator]);
+      setLastResult(null);
+    } else {
+      setExpression((prev) => prev + display + displayMap[operator]);
+    }
+    setShouldResetDisplay(true);
+  }, [display, lastResult]);
+
+  const calculateResult = useCallback(() => {
+    try {
+      const fullExpression = expression + display;
+      // Convert display operators back to math operators
+      const mathExpression = fullExpression
+        .replace(/\s/g, '')
+        .replace(/−/g, '-')
+        .replace(/×/g, '*')
+        .replace(/÷/g, '/');
+
+      if (!mathExpression || mathExpression.trim() === '') return;
+
+      const result = evaluate(mathExpression);
+      const formattedResult = formatResult(result);
+
+      const displayExpression = fullExpression.trim();
+
+      setDisplay(formattedResult);
+      setExpression('');
+      setShouldResetDisplay(true);
+      setLastResult(formattedResult);
+
+      onCalculate(displayExpression, formattedResult);
+      onToast('✨ Calculated!');
+    } catch (error) {
+      console.error('Calculation error:', error);
+      setDisplay('Error');
+      setExpression('');
+      setShouldResetDisplay(true);
+      onToast('❌ Invalid expression');
+    }
+  }, [expression, display, onCalculate, onToast]);
+
+  const clear = useCallback(() => {
+    setDisplay('0');
+    setExpression('');
+    setShouldResetDisplay(false);
+    setLastResult(null);
+  }, []);
+
+  const backspace = useCallback(() => {
+    if (shouldResetDisplay) return;
+    setDisplay((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+  }, [shouldResetDisplay]);
+
+  // Keyboard support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= '0' && e.key <= '9') {
+        inputDigit(e.key);
+      } else if (e.key === '.') {
+        inputDecimal();
+      } else if (e.key
