@@ -1,14 +1,24 @@
-'+' || peek()!.value === '-')) {
+'*' || peek()!.value === '/')) {
       const op = consume().value;
-      const right = parseTerm();
-      if (op === '+') result += right;
-      else result -= right;
+      const right = parseFactor();
+      if (op === '*') result *= right;
+      else {
+        if (right === 0) throw new Error('Division by zero');
+        result /= right;
+      }
     }
 
     return result;
   }
 
-  function parseTerm(): number {
-    let result = parseFactor();
+  function parseFactor(): number {
+    const token = peek();
 
-    while (peek() && peek()!.type
+    if (!token) {
+      throw new Error('Unexpected end of expression');
+    }
+
+    if (token.type === 'number') {
+      consume();
+      // Handle percentage
+      if (peek() && peek()!.type
